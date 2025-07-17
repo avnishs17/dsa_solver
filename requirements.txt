@@ -1,22 +1,14 @@
 langchain
+langchain-core
 langchain-community
 langchain-experimental
-fastapi
 python-dotenv
-uvicorn[standard]
+uvicorn
+fastapi
 pydantic
-httpx
-requests
-langchain_tavily<0.2
-langchain_groq
+pydantic-settings
 langchain-google-genai
 langgraph
-pyyaml
-streamlit
-pytest
 ipykernel
-
-
-# .venv/Scripts/activate
-# uvicorn app:app --reload --host 0.0.0.0 --port 8000
-# streamlit run ui\streamlit_app.py --server.port 8501
+streamlit
+requests
