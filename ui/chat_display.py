@@ -74,6 +74,49 @@ class ChatDisplay:
     
     def _render_assistant_message(self, content: str, timestamp: str) -> None:
         """Render an assistant message."""
+        # Handle both string and list content types
+        if isinstance(content, list):
+            content = "\n".join(str(item) for item in content)
+        elif not isinstance(content, str):
+            content = str(content)
+        
+        # Check if this is a complexity analysis or structured output
+        if "complexity" in content.lower() or "time complexity" in content.lower():
+            self._render_structured_message(content, timestamp, "📊 Complexity Analysis")
+        else:
+            st.markdown(
+                f"""
+                <div style="
+                    display: flex;
+                    justify-content: flex-start;
+                    margin: 12px 0;
+                ">
+                    <div style="
+                        background-color: #f8f9fa;
+                        color: #212529;
+                        padding: 12px 16px;
+                        border-radius: 18px;
+                        max-width: 70%;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                        border: 1px solid #e9ecef;
+                    ">
+                        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 16px; margin-right: 8px;">{self.assistant_avatar}</span>
+                            <span style="font-weight: 600; color: #495057;">Assistant</span>
+                        </div>
+                        <div style="font-size: 14px; line-height: 1.5;">{content}</div>
+                        <div style="font-size: 11px; color: #6c757d; margin-top: 4px;">{timestamp}</div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+    
+    def _render_structured_message(self, content: str, timestamp: str, title: str) -> None:
+        """Render a structured message like complexity analysis with proper formatting."""
+        # Format content for better display
+        formatted_content = self._format_analysis_content(content)
+        
         st.markdown(
             f"""
             <div style="
@@ -84,23 +127,56 @@ class ChatDisplay:
                 <div style="
                     background-color: #f8f9fa;
                     color: #212529;
-                    padding: 12px 16px;
-                    border-radius: 18px;
-                    max-width: 70%;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    padding: 16px;
+                    border-radius: 12px;
+                    max-width: 85%;
+                    box-shadow: 0 3px 12px rgba(0,0,0,0.1);
                     border: 1px solid #e9ecef;
+                    border-left: 4px solid #007bff;
                 ">
-                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                    <div style="display: flex; align-items: center; margin-bottom: 12px;">
                         <span style="font-size: 16px; margin-right: 8px;">{self.assistant_avatar}</span>
-                        <span style="font-weight: 600; color: #495057;">Assistant</span>
+                        <span style="font-weight: 600; color: #495057;">{title}</span>
                     </div>
-                    <div style="font-size: 14px; line-height: 1.5;">{content}</div>
-                    <div style="font-size: 11px; color: #6c757d; margin-top: 4px;">{timestamp}</div>
+                    <div style="font-size: 14px; line-height: 1.6;">{formatted_content}</div>
+                    <div style="font-size: 11px; color: #6c757d; margin-top: 8px;">{timestamp}</div>
                 </div>
             </div>
             """,
             unsafe_allow_html=True
         )
+    
+    def _format_analysis_content(self, content: str) -> str:
+        """Format analysis content for better readability."""
+        import re
+        import html
+        
+        # Ensure content is a string
+        if isinstance(content, list):
+            content = "\n".join(str(item) for item in content)
+        elif not isinstance(content, str):
+            content = str(content)
+        
+        # Escape HTML to prevent rendering issues
+        content = html.escape(content)
+        
+        # Convert markdown-style headers to HTML
+        content = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', content)
+        
+        # Format bullet points
+        content = re.sub(r'^- ', r'• ', content, flags=re.MULTILINE)
+        content = re.sub(r'^(\d+)\.\s', r'• ', content, flags=re.MULTILINE)
+        
+        # Format O() notation with highlighting
+        content = re.sub(r'O\(([^)]+)\)', r'<span style="background-color: #e3f2fd; padding: 2px 4px; border-radius: 3px; font-family: monospace; color: #1976d2;"><strong>O(\1)</strong></span>', content)
+        
+        # Format code blocks
+        content = re.sub(r'```(.*?)```', r'<div style="background-color: #f5f5f5; padding: 8px; border-radius: 4px; margin: 4px 0; font-family: monospace; border-left: 3px solid #2196f3;">\1</div>', content, flags=re.DOTALL)
+        
+        # Add line breaks for better spacing
+        content = re.sub(r'\n', '<br>', content)
+        
+        return content.strip()
     
     def _render_system_message(self, content: str, timestamp: str) -> None:
         """Render a system message."""

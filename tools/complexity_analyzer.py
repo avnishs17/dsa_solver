@@ -14,12 +14,27 @@ def complexity_analyzer(code: str) -> str:
     """
     llm = get_llm()
     
-    prompt = f"""Analyze the time and space complexity of this code. Provide:
-    1. Time complexity with explanation
-    2. Space complexity with explanation
-    3. Suggestions for optimization if any
-    
-    Code: {code}"""
+    prompt = f"""Analyze the time and space complexity of this code. Format your response clearly with the following structure:
+
+**Time Complexity:** O(n) - Brief explanation of why
+- Detailed explanation of the time complexity analysis
+
+**Space Complexity:** O(n) - Brief explanation of why  
+- Detailed explanation of the space complexity analysis
+
+**Algorithm Approach:**
+- Brief description of the algorithm and how it works
+
+**Optimization Suggestions:**
+- Any potential optimizations or alternative approaches
+- Trade-offs between different solutions
+
+Code to analyze:
+```
+{code}
+```
+
+Please provide a clear, well-structured analysis that's easy to read."""
     
     response = llm.invoke(prompt)
     
