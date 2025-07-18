@@ -8,7 +8,10 @@ fastapi
 pydantic
 pydantic-settings
 langchain-google-genai
+streamlit==1.29.0
+langgraph==0.0.20
 langgraph
 ipykernel
 streamlit
 requests
+tenacity

@@ -1,1 +1,0 @@
-# DSA Mentor Backend Application
