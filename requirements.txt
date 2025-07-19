@@ -1,44 +1,17 @@
 # Core LangChain dependencies
-langchain==0.2.16
-langchain-core==0.2.39
-langchain-community==0.2.16
-langchain-experimental==0.0.68
-langgraph==0.2.16
+langchain
+langchain-core
+langchain-experimental
+langgraph
 
-# LLM Provider dependencies
-langchain-openai==0.1.23
-langchain-anthropic==0.1.23
-langchain-google-genai==1.0.10
+# LLM Provider
+langchain-google-genai
 
-# Web framework and UI
-streamlit==1.39.0
-fastapi==0.115.6
-uvicorn==0.32.1
+# Web framework
+streamlit
 
-# Data validation and settings
-pydantic==2.10.3
-pydantic-settings==2.6.1
+# Configuration and settings
+pydantic-settings
 
-# Environment and configuration
-python-dotenv==1.0.1
-
-# Development and testing
-ipykernel==6.29.5
-requests==2.32.3
-tenacity==9.0.0
-pytest==8.4.1
-pytest-asyncio==0.25.0
-
-# Required for core functionality
-numpy==2.3.1
-pandas==2.3.1
-matplotlib==3.10.3
-
-# Additional runtime dependencies
-typing-extensions==4.12.2
-aiohttp==3.11.11
-aiofiles==24.1.0
-click==8.2.1
-colorama==0.4.6
-markdown==3.7
-toml==0.10.2
+# Python environment
+python-dotenv
