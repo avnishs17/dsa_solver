@@ -1,0 +1,85 @@
+name: Build and Deploy to GKE
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GKE_CLUSTER: dsa-helper
+  GKE_ZONE: us-central1-a
+  DEPLOYMENT_NAME: dsa-solver
+  IMAGE: dsa-solver
+  ARTIFACT_REGISTRY: dsa-solver
+  ARTIFACT_REGION: us-central1
+  USE_GKE_GCLOUD_AUTH_PLUGIN: True
+
+jobs:
+  setup-build-publish-deploy:
+    name: Setup, Build, Publish, and Deploy
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Authenticate to Google Cloud
+      id: auth
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: Install GKE auth plugin
+      run: |-
+        gcloud components install gke-gcloud-auth-plugin
+
+    - name: Configure Docker to use gcloud as credential helper
+      run: |-
+        gcloud auth configure-docker $ARTIFACT_REGION-docker.pkg.dev
+
+    - name: Get GKE credentials
+      run: |-
+        gcloud container clusters get-credentials "$GKE_CLUSTER" --zone "$GKE_ZONE" --project "$PROJECT_ID"
+
+    - name: Build Docker image
+      run: |-
+        docker build -t "$ARTIFACT_REGION-docker.pkg.dev/$PROJECT_ID/$ARTIFACT_REGISTRY/$IMAGE:$GITHUB_SHA" .
+
+    - name: Push Docker image to Artifact Registry
+      run: |-
+        docker push "$ARTIFACT_REGION-docker.pkg.dev/$PROJECT_ID/$ARTIFACT_REGISTRY/$IMAGE:$GITHUB_SHA"
+
+    - name: Prepare Kubernetes secrets
+      run: |-
+        # Base64 encode secrets for Kubernetes
+        GOOGLE_API_KEY_B64=$(echo -n "${{ secrets.GOOGLE_API_KEY }}" | base64 -w 0)
+        LANGSMITH_API_KEY_B64=$(echo -n "${{ secrets.LANGSMITH_API_KEY }}" | base64 -w 0)
+        
+        # Replace placeholder secrets in deployment.yaml
+        sed -i "s|GOOGLE_API_KEY: \"\"|GOOGLE_API_KEY: \"$GOOGLE_API_KEY_B64\"|g" kubernetes-deployment.yaml
+        sed -i "s|LANGSMITH_API_KEY: \"\"|LANGSMITH_API_KEY: \"$LANGSMITH_API_KEY_B64\"|g" kubernetes-deployment.yaml
+
+    - name: Deploy to GKE
+      run: |-
+        # Replace IMAGE_TAG in deployment.yaml
+        sed -i "s|IMAGE_TAG|$ARTIFACT_REGION-docker.pkg.dev/$PROJECT_ID/$ARTIFACT_REGISTRY/$IMAGE:$GITHUB_SHA|g" kubernetes-deployment.yaml
+        
+        # Apply Kubernetes manifests
+        kubectl apply -f kubernetes-deployment.yaml
+        
+        # Verify deployment
+        kubectl rollout status deployment/$DEPLOYMENT_NAME -n dsa-solver
+        
+        # Get service external IP (if LoadBalancer)
+        kubectl get services -n dsa-solver -o wide
