@@ -39,11 +39,15 @@ class ChatDisplay:
         role = message.get("role", "user")
         content = message.get("content", "")
         timestamp = message.get("timestamp", datetime.now().strftime("%H:%M"))
+        is_tool_result = message.get("tool_result", False)
         
         if role == "user":
             self._render_user_message(content, timestamp)
         elif role == "assistant":
-            self._render_assistant_message(content, timestamp)
+            if is_tool_result:
+                self._render_tool_result_message(content, timestamp)
+            else:
+                self._render_assistant_message(content, timestamp)
         else:
             self._render_system_message(content, timestamp)
     
@@ -54,18 +58,18 @@ class ChatDisplay:
             <div style="
                 display: flex;
                 justify-content: flex-end;
-                margin: 12px 0;
+                margin: 8px 0;
             ">
                 <div style="
                     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                     color: white;
-                    padding: 12px 16px;
-                    border-radius: 18px;
+                    padding: 8px 12px;
+                    border-radius: 12px;
                     max-width: 70%;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
                 ">
-                    <div style="font-size: 14px; line-height: 1.4;">{content}</div>
-                    <div style="font-size: 11px; opacity: 0.7; margin-top: 4px; text-align: right;">{timestamp}</div>
+                    <div style="font-size: 13px; line-height: 1.4;">{content}</div>
+                    <div style="font-size: 10px; opacity: 0.7; margin-top: 3px; text-align: right;">{timestamp}</div>
                 </div>
             </div>
             """,
@@ -89,23 +93,23 @@ class ChatDisplay:
                 <div style="
                     display: flex;
                     justify-content: flex-start;
-                    margin: 12px 0;
+                    margin: 8px 0;
                 ">
                     <div style="
                         background-color: #f8f9fa;
                         color: #212529;
-                        padding: 12px 16px;
-                        border-radius: 18px;
-                        max-width: 70%;
-                        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                        padding: 8px 12px;
+                        border-radius: 12px;
+                        max-width: 75%;
+                        box-shadow: 0 1px 4px rgba(0,0,0,0.08);
                         border: 1px solid #e9ecef;
                     ">
-                        <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                            <span style="font-size: 16px; margin-right: 8px;">{self.assistant_avatar}</span>
-                            <span style="font-weight: 600; color: #495057;">Assistant</span>
+                        <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                            <span style="font-size: 14px; margin-right: 6px;">{self.assistant_avatar}</span>
+                            <span style="font-weight: 600; color: #495057; font-size: 13px;">Assistant</span>
+                            <span style="font-size: 10px; color: #6c757d; margin-left: auto;">{timestamp}</span>
                         </div>
-                        <div style="font-size: 14px; line-height: 1.5;">{content}</div>
-                        <div style="font-size: 11px; color: #6c757d; margin-top: 4px;">{timestamp}</div>
+                        <div style="font-size: 13px; line-height: 1.4;">{content}</div>
                     </div>
                 </div>
                 """,
@@ -182,7 +186,7 @@ class ChatDisplay:
         """Render a system message."""
         # Different styling for tool usage messages
         if "🔧" in content or "✅" in content and "tool" in content.lower():
-            # Tool usage message
+            # Tool usage message - more compact
             bg_color = "#e8f5e8"
             border_color = "#4caf50"
             icon = "🛠️"
@@ -196,17 +200,17 @@ class ChatDisplay:
             f"""
             <div style="
                 background-color: {bg_color};
-                padding: 8px 12px;
-                border-radius: 8px;
-                margin: 8px 0;
-                border-left: 4px solid {border_color};
+                padding: 6px 10px;
+                border-radius: 6px;
+                margin: 3px 0;
+                border-left: 3px solid {border_color};
                 text-align: center;
                 font-style: italic;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                font-size: 12px;
             ">
-                <div style="color: #555; font-size: 0.85em; font-weight: 500;">
-                    {icon} {content} <span style="font-size: 0.75em; opacity: 0.7;">({timestamp})</span>
-                </div>
+                <span style="color: #555; font-weight: 500;">
+                    {icon} {content} <span style="font-size: 10px; opacity: 0.6;">({timestamp})</span>
+                </span>
             </div>
             """,
             unsafe_allow_html=True
@@ -234,9 +238,41 @@ class ChatDisplay:
             unsafe_allow_html=True
         )
     
+    def _render_tool_result_message(self, content: str, timestamp: str) -> None:
+        """Render a tool result message with compact, readable styling."""
+        # Clean up content and handle formatting
+        if isinstance(content, list):
+            content = "\n".join(str(item) for item in content)
+        elif not isinstance(content, str):
+            content = str(content)
+        
+        st.markdown(
+            f"""
+            <div style="
+                background-color: #f8f9fa;
+                padding: 8px 12px;
+                border-radius: 8px;
+                margin: 4px 0;
+                border-left: 3px solid #28a745;
+                border: 1px solid #dee2e6;
+                font-size: 13px;
+                line-height: 1.4;
+            ">
+                <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                    <span style="font-size: 12px; margin-right: 6px;">🔧</span>
+                    <span style="font-weight: 600; color: #495057; font-size: 12px; opacity: 0.8;">Tool Result</span>
+                    <span style="font-size: 10px; color: #6c757d; margin-left: auto;">{timestamp}</span>
+                </div>
+                <div style="color: #212529; white-space: pre-wrap;">{content}</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    
     def render_error_message(self, error_msg: str) -> None:
         """Render an error message."""
         st.error(f"❌ Error: {error_msg}")
+    
     
     def render_success_message(self, success_msg: str) -> None:
         """Render a success message."""

@@ -142,26 +142,14 @@ class DSASolverApp:
                                 print("⚠️ AI Message has no content to display")
                         
                         elif isinstance(message, ToolMessage):
-                            # This is the result of a tool call
+                            # This is the result of a tool call - let the LLM handle the display
                             tool_name = getattr(message, 'name', 'Tool')
+                            print(f"🔧 ToolMessage: {tool_name}")
+                            print(f"🔧 ToolMessage content length: {len(message.content) if message.content else 0}")
+                            print(f"🔧 ToolMessage content preview: {message.content[:200] if message.content else 'None'}...")
                             
-                            # Map to user-friendly names
-                            tool_display_names = {
-                                'python_repl': 'Code Executor',
-                                'generate_hint': 'Hint Generator', 
-                                'complexity_analyzer': 'Complexity Analyzer',
-                                'generate_test_cases': 'Test Case Generator',
-                                'persistent_python_repl': 'Code Executor'
-                            }
-                            
-                            display_name = tool_display_names.get(tool_name, tool_name)
-                            tool_timestamp = datetime.now().strftime("%H:%M:%S")
-                            st.session_state.messages.append({
-                                "role": "system",
-                                "content": f"✅ {display_name} completed",
-                                "timestamp": tool_timestamp
-                            })
-                            print(f"✅ Tool completed: {tool_name} (displayed as: {display_name})")
+                            # Don't display tool results directly - the assistant will synthesize them
+                            print("🔧 Tool result received, letting LLM synthesize...")
                             
                     # Update app state with the complete result
                     st.session_state.app_state = result
@@ -199,31 +187,16 @@ class DSASolverApp:
         try:
             # Simple, clean message for code analysis
             analysis_message = f"""
-Please analyze and execute this code:
+I'd like you to analyze this code:
 
 ```python
 {code}
 ```
 
-Please:
-1. Check if the code has test cases, if not, add appropriate test cases
-2. Execute the complete code and show the output
-3. Analyze its time and space complexity  
-4. Provide optimization suggestions if needed
-5. Explain the algorithm approach
-
-Use your available tools to provide a complete analysis.
+Please execute it and provide feedback on the implementation. If you notice any issues or if it runs successfully, let me know about the approach and any suggestions for improvement.
 """
             
-            # Add user message to show the code execution request
-            timestamp = datetime.now().strftime("%H:%M:%S")
-            st.session_state.messages.append({
-                "role": "user",
-                "content": "🔄 Running code analysis...",
-                "timestamp": timestamp
-            })
-            
-            # Process through the regular chat flow
+            # Process through the regular chat flow (don't add duplicate user message)
             self.handle_user_input(analysis_message)
             
         except Exception as e:
@@ -256,18 +229,6 @@ Use your available tools to provide a complete analysis.
         with col2:
             # Chat mentor interface
             self._render_chat_interface()
-        
-        # Auto-scroll to bottom if enabled
-        if st.session_state.get("auto_scroll", True):
-            st.markdown(
-                """
-                <script>
-                    var element = document.querySelector('.main');
-                    element.scrollTop = element.scrollHeight;
-                </script>
-                """,
-                unsafe_allow_html=True
-            )
     
     def _render_chat_interface(self):
         """Render the chat interface."""
@@ -278,25 +239,12 @@ Use your available tools to provide a complete analysis.
         if st.session_state.get("debug_mode", False):
             st.write(f"Debug: Total messages in session: {len(st.session_state.messages)}")
         
-        # Chat container with good readability
-        chat_container = st.container(height=450)
-        with chat_container:
-            self.chat_display.render_messages(st.session_state.messages)
+        # Chat container that grows with content
+        self.chat_display.render_messages(st.session_state.messages)
         
-        # Compact chat input - single line with inline button
-        col1, col2 = st.columns([4, 1])
-        with col1:
-            user_input = st.text_input(
-                "Ask:",
-                placeholder="Ask about algorithms, get hints...",
-                key="mentor_chat_input",
-                label_visibility="collapsed"
-            )
-        with col2:
-            if st.button("Send", type="primary", use_container_width=True):
-                if user_input.strip():
-                    self.handle_user_input(user_input.strip())
-                    st.rerun()
+        # Use the dedicated ChatInput component instead of duplicating logic
+        self.chat_input.set_placeholder("Ask about algorithms, get hints...")
+        self.chat_input.render()
         
         # Only 2 compact example prompts when no messages
         if not st.session_state.get("messages", []):

@@ -50,11 +50,11 @@ class ChatInput:
         if submit_button and user_input.strip():
             message = user_input.strip()
             
-            # Call the callback if provided (don't add to session state here)
+            # Call the callback if provided
             if self.on_submit:
                 self.on_submit(message)
+                # Let the parent component handle rerun
             
-            # Don't trigger rerun here - let the main app handle it
             return message
         
         return None
