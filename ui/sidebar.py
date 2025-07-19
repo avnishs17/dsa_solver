@@ -1,5 +1,5 @@
 import streamlit as st
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from config.settings import Settings
 
 
@@ -73,20 +73,10 @@ class Sidebar:
             help="Display timestamps for each message"
         )
         
-        # Message limit
-        message_limit = st.sidebar.number_input(
-            "Message History Limit",
-            min_value=10,
-            max_value=1000,
-            value=100,
-            step=10,
-            help="Maximum number of messages to keep in history"
-        )
-        
+
         # Store chat settings
         st.session_state.auto_scroll = auto_scroll
         st.session_state.show_timestamps = show_timestamps
-        st.session_state.message_limit = message_limit
     
     def _render_thread_section(self) -> None:
         """Render thread management section."""

@@ -205,14 +205,6 @@ Please execute it and provide feedback on the implementation. If you notice any 
     
     def render(self):
         """Render the main application interface."""
-        # Set page configuration
-        st.set_page_config(
-            page_title="DSA Solver",
-            page_icon="🧮",
-            layout="wide",
-            initial_sidebar_state="expanded"
-        )
-        
         # Render sidebar
         self.sidebar.render()
         
@@ -274,6 +266,14 @@ Please execute it and provide feedback on the implementation. If you notice any 
 
 def main():
     """Main application entry point."""
+    # Set page configuration FIRST - before any other Streamlit commands
+    st.set_page_config(
+        page_title="DSA Solver",
+        page_icon="🧮",
+        layout="wide",
+        initial_sidebar_state="expanded"
+    )
+    
     app = DSASolverApp()
     app.render()
 
